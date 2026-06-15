@@ -1,0 +1,190 @@
+{
+  "name": "cortex-plugin-security-audit",
+  "version": "1.0.0",
+  "description": "Automated security scanning: dependency vulnerabilities, SAST analysis, secret detection, OWASP Top 10 checks. Agent runs scans, explains findings, and generates fix PRs.",
+  "kind": "esm",
+  "entryPoint": "mod.ts",
+  "runtime": "deno",
+  "author": "CortexPrism",
+  "license": "MIT",
+  "repository": "https://github.com/CortexPrism/cortex-plugin-security-audit",
+  "homepage": "https://github.com/CortexPrism/cortex-plugin-security-audit",
+  "capabilities": [
+    "tools",
+    "shell:run",
+    "fs:read",
+    "network:fetch"
+  ],
+  "tools": [
+    {
+      "name": "audit_dependencies",
+      "description": "Scan project dependencies for known vulnerabilities using package manager audit tools.",
+      "params": [
+        {
+          "name": "project_path",
+          "type": "string",
+          "description": "Path to the project root directory",
+          "required": true
+        },
+        {
+          "name": "package_manager",
+          "type": "string",
+          "description": "Package manager to use for scanning",
+          "required": false,
+          "enum": ["npm", "pip", "cargo", "gomod", "auto"],
+          "default": "auto"
+        },
+        {
+          "name": "output_format",
+          "type": "string",
+          "description": "Output format for results",
+          "required": false,
+          "enum": ["json", "markdown"],
+          "default": "json"
+        }
+      ]
+    },
+    {
+      "name": "audit_secrets",
+      "description": "Scan codebase for hardcoded secrets, credentials, API keys, and tokens.",
+      "params": [
+        {
+          "name": "target_path",
+          "type": "string",
+          "description": "Path to the directory or file to scan",
+          "required": true
+        },
+        {
+          "name": "file_patterns",
+          "type": "string",
+          "description": "Comma-separated glob patterns for files to scan (e.g. '*.ts,*.js,*.py')",
+          "required": false
+        },
+        {
+          "name": "exclude_dirs",
+          "type": "string",
+          "description": "Comma-separated directories to exclude from scan",
+          "required": false,
+          "default": "node_modules,.git,dist,build"
+        }
+      ]
+    },
+    {
+      "name": "audit_sast",
+      "description": "Static analysis security testing for common vulnerability patterns in source code.",
+      "params": [
+        {
+          "name": "target_path",
+          "type": "string",
+          "description": "Path to the directory or file to analyze",
+          "required": true
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "description": "Programming language of the target code",
+          "required": true
+        },
+        {
+          "name": "rules",
+          "type": "string",
+          "description": "Comma-separated rule categories to apply (owasp_top10,injection,xss,auth,crypto)",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "audit_owasp",
+      "description": "OWASP Top 10 compliance check against target project.",
+      "params": [
+        {
+          "name": "target_path",
+          "type": "string",
+          "description": "Path to the project directory to check",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "string",
+          "description": "OWASP Top 10 version year",
+          "required": false,
+          "enum": ["2021", "2017"],
+          "default": "2021"
+        }
+      ]
+    },
+    {
+      "name": "audit_generate_report",
+      "description": "Generate a comprehensive security audit report from findings.",
+      "params": [
+        {
+          "name": "findings",
+          "type": "string",
+          "description": "JSON array of findings from other audit tools",
+          "required": true
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "description": "Output format for the report",
+          "required": false,
+          "enum": ["markdown", "json", "html"],
+          "default": "markdown"
+        },
+        {
+          "name": "include_remediation",
+          "type": "boolean",
+          "description": "Include remediation guidance in the report",
+          "required": false,
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "audit_status",
+      "description": "Check what security audit capabilities are available and their configuration.",
+      "params": []
+    }
+  ],
+  "ui": [
+    {
+      "section": "General",
+      "fields": [
+        {
+          "name": "severityThreshold",
+          "type": "select",
+          "label": "Severity Threshold",
+          "description": "Minimum severity level to include in reports",
+          "default": "medium",
+          "options": [
+            { "label": "Low", "value": "low" },
+            { "label": "Medium", "value": "medium" },
+            { "label": "High", "value": "high" },
+            { "label": "Critical", "value": "critical" }
+          ]
+        },
+        {
+          "name": "maxFileSizeMB",
+          "type": "number",
+          "label": "Max File Size (MB)",
+          "description": "Maximum file size in megabytes to scan",
+          "default": 10
+        },
+        {
+          "name": "excludeDirs",
+          "type": "text",
+          "label": "Exclude Directories",
+          "description": "Comma-separated directories to exclude from scans",
+          "default": "node_modules,.git,dist,build,__pycache__"
+        }
+      ]
+    }
+  ],
+  "peerDependencies": {
+    "cortex": ">=1.0.0"
+  },
+  "aiDisclosure": {
+    "tools": ["Claude Code (Anthropic) — scaffold and implementation"],
+    "humanReview": true
+  }
+}
