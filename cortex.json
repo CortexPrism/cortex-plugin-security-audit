@@ -31,7 +31,13 @@
           "type": "string",
           "description": "Package manager to use for scanning",
           "required": false,
-          "enum": ["npm", "pip", "cargo", "gomod", "auto"],
+          "enum": [
+            "npm",
+            "pip",
+            "cargo",
+            "gomod",
+            "auto"
+          ],
           "default": "auto"
         },
         {
@@ -39,7 +45,10 @@
           "type": "string",
           "description": "Output format for results",
           "required": false,
-          "enum": ["json", "markdown"],
+          "enum": [
+            "json",
+            "markdown"
+          ],
           "default": "json"
         }
       ]
@@ -108,7 +117,10 @@
           "type": "string",
           "description": "OWASP Top 10 version year",
           "required": false,
-          "enum": ["2021", "2017"],
+          "enum": [
+            "2021",
+            "2017"
+          ],
           "default": "2021"
         }
       ]
@@ -128,7 +140,11 @@
           "type": "string",
           "description": "Output format for the report",
           "required": false,
-          "enum": ["markdown", "json", "html"],
+          "enum": [
+            "markdown",
+            "json",
+            "html"
+          ],
           "default": "markdown"
         },
         {
@@ -146,45 +162,61 @@
       "params": []
     }
   ],
-  "ui": [
-    {
-      "section": "General",
-      "fields": [
-        {
-          "name": "severityThreshold",
-          "type": "select",
-          "label": "Severity Threshold",
-          "description": "Minimum severity level to include in reports",
-          "default": "medium",
-          "options": [
-            { "label": "Low", "value": "low" },
-            { "label": "Medium", "value": "medium" },
-            { "label": "High", "value": "high" },
-            { "label": "Critical", "value": "critical" }
-          ]
-        },
-        {
-          "name": "maxFileSizeMB",
-          "type": "number",
-          "label": "Max File Size (MB)",
-          "description": "Maximum file size in megabytes to scan",
-          "default": 10
-        },
-        {
-          "name": "excludeDirs",
-          "type": "text",
-          "label": "Exclude Directories",
-          "description": "Comma-separated directories to exclude from scans",
-          "default": "node_modules,.git,dist,build,__pycache__"
-        }
-      ]
-    }
-  ],
+  "ui": {
+    "settings": [
+      {
+        "section": "General",
+        "fields": [
+          {
+            "type": "select",
+            "label": "Severity Threshold",
+            "description": "Minimum severity level to include in reports",
+            "default": "medium",
+            "options": [
+              {
+                "label": "Low",
+                "value": "low"
+              },
+              {
+                "label": "Medium",
+                "value": "medium"
+              },
+              {
+                "label": "High",
+                "value": "high"
+              },
+              {
+                "label": "Critical",
+                "value": "critical"
+              }
+            ],
+            "key": "severityThreshold"
+          },
+          {
+            "type": "number",
+            "label": "Max File Size (MB)",
+            "description": "Maximum file size in megabytes to scan",
+            "default": 10,
+            "key": "maxFileSizeMB"
+          },
+          {
+            "type": "text",
+            "label": "Exclude Directories",
+            "description": "Comma-separated directories to exclude from scans",
+            "default": "node_modules,.git,dist,build,__pycache__",
+            "key": "excludeDirs"
+          }
+        ]
+      }
+    ]
+  },
   "peerDependencies": {
     "cortex": ">=1.0.0"
   },
   "aiDisclosure": {
-    "tools": ["Claude Code (Anthropic) — scaffold and implementation"],
+    "tools": [
+      "Claude Code (Anthropic) \u2014 scaffold and implementation"
+    ],
     "humanReview": true
   }
 }

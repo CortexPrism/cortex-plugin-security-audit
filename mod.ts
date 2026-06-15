@@ -1,4 +1,4 @@
-import type { Tool, PluginContext, ToolResult } from 'cortex/plugins';
+import type { Tool, ToolContext, PluginContext, ToolCallResult } from 'cortex/plugins';
 
 interface PluginConfig {
   severityThreshold: 'low' | 'medium' | 'high' | 'critical';
@@ -460,7 +460,7 @@ const auditDependenciesTool: Tool = {
     capabilities: ['shell:run', 'fs:read'],
   },
 
-  execute: async (args: Record<string, unknown>, ctx: PluginContext): Promise<ToolResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const projectPath = args.project_path as string;
@@ -523,7 +523,7 @@ const auditSecretsTool: Tool = {
     capabilities: ['fs:read'],
   },
 
-  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const targetPath = args.target_path as string;
@@ -635,7 +635,7 @@ const auditSastTool: Tool = {
     capabilities: ['fs:read'],
   },
 
-  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const targetPath = args.target_path as string;
@@ -699,7 +699,7 @@ const auditOwaspTool: Tool = {
     capabilities: ['fs:read'],
   },
 
-  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const targetPath = args.target_path as string;
@@ -738,7 +738,7 @@ const auditGenerateReportTool: Tool = {
     capabilities: [],
   },
 
-  execute: async (args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolResult> => {
+  execute: async (args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const findingsRaw = args.findings as string;
@@ -798,7 +798,7 @@ const auditStatusTool: Tool = {
     capabilities: [],
   },
 
-  execute: async (_args: Record<string, unknown>, _ctx: PluginContext): Promise<ToolResult> => {
+  execute: async (_args: Record<string, unknown>, _ctx: ToolContext): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
       const status = {
