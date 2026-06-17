@@ -1,6 +1,10 @@
-import { assertEquals, assertStringIncludes, assertExists } from 'https://deno.land/std@0.208.0/assert/mod.ts';
+import {
+  assertEquals,
+  assertExists,
+  assertStringIncludes,
+} from 'https://deno.land/std@0.208.0/assert/mod.ts';
 import { tools } from '../../mod.ts';
-import type { PluginContext } from 'cortex/plugins';
+import type { PluginContext } from '../../types.ts';
 
 const mockContext: PluginContext = {
   pluginId: 'cortex-plugin-security-audit',
@@ -8,6 +12,8 @@ const mockContext: PluginContext = {
   state: {
     get: async () => null,
     set: async () => {},
+    delete: async () => {},
+    list: async () => ({}),
   },
   config: {
     get: async () => ({
@@ -15,6 +21,18 @@ const mockContext: PluginContext = {
       maxFileSizeMB: 10,
       excludeDirs: 'node_modules,.git,dist,build,__pycache__',
     }),
+    set: async () => {},
+    getAll: async () => ({}),
+  },
+  logger: {
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    debug: () => {},
+  },
+  host: {
+    registerTool: () => {},
+    unregisterTool: () => {},
   },
 };
 
@@ -52,7 +70,10 @@ Deno.test('audit_dependencies - requires project_path', async () => {
 
 Deno.test('audit_dependencies - succeeds with valid path', async () => {
   const tool = findTool('audit_dependencies');
-  const result = await tool!.execute({ project_path: '/tmp/test-project', package_manager: 'npm' }, mockContext);
+  const result = await tool!.execute(
+    { project_path: '/tmp/test-project', package_manager: 'npm' },
+    mockContext,
+  );
   assertEquals(result.success, true);
   const data = JSON.parse(result.output);
   assertExists(data.findings);
@@ -149,7 +170,10 @@ Deno.test('audit_owasp - defaults to 2021', async () => {
 
 Deno.test('audit_owasp - supports 2017', async () => {
   const tool = findTool('audit_owasp');
-  const result = await tool!.execute({ target_path: '/tmp/test-project', year: '2017' }, mockContext);
+  const result = await tool!.execute(
+    { target_path: '/tmp/test-project', year: '2017' },
+    mockContext,
+  );
   assertEquals(result.success, true);
   const data = JSON.parse(result.output);
   assertEquals(data.owaspVersion, '2017');
@@ -255,7 +279,13 @@ Deno.test('tool results include durationMs', async () => {
     } else if (tool.definition.name === 'audit_owasp') {
       params.target_path = '/tmp/test';
     } else if (tool.definition.name === 'audit_generate_report') {
-      params.findings = JSON.stringify([{ id: 'X', tool: 'x', severity: 'low', title: 'X', description: 'x' }]);
+      params.findings = JSON.stringify([{
+        id: 'X',
+        tool: 'x',
+        severity: 'low',
+        title: 'X',
+        description: 'x',
+      }]);
     }
     const result = await tool.execute(params, mockContext);
     assertExists(result.durationMs, `${tool.definition.name} missing durationMs`);

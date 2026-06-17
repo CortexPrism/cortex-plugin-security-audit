@@ -1,4 +1,4 @@
-import type { Tool, ToolContext, PluginContext, ToolCallResult } from 'cortex/plugins';
+import type { PluginContext, Tool, ToolCallResult, ToolContext } from './types.ts';
 
 interface PluginConfig {
   severityThreshold: 'low' | 'medium' | 'high' | 'critical';
@@ -30,48 +30,249 @@ let pluginConfig: PluginConfig = {
   excludeDirs: 'node_modules,.git,dist,build,__pycache__',
 };
 
-const SECRET_PATTERNS: { name: string; regex: RegExp; category: string; severity: 'high' | 'critical' }[] = [
-  { name: 'GitHub Personal Access Token', regex: /gh[po]_[A-Za-z0-9_]{36,}/, category: 'API Key', severity: 'critical' },
-  { name: 'GitHub OAuth Token', regex: /gho_[A-Za-z0-9_]{36,}/, category: 'API Key', severity: 'critical' },
-  { name: 'GitHub App Token', regex: /ghu_[A-Za-z0-9_]{36,}/, category: 'API Key', severity: 'critical' },
-  { name: 'GitHub Refresh Token', regex: /ghr_[A-Za-z0-9_]{36,}/, category: 'API Key', severity: 'critical' },
-  { name: 'AWS Access Key ID', regex: /AKIA[0-9A-Z]{16}/, category: 'Cloud Credential', severity: 'critical' },
-  { name: 'AWS Secret Access Key', regex: /(?i)aws.{0,20}secret.{0,20}['"][0-9a-zA-Z/+]{40}['"]/, category: 'Cloud Credential', severity: 'critical' },
-  { name: 'AWS Session Token', regex: /(?i)aws.{0,20}session.{0,20}['"][A-Za-z0-9/+=]{100,}['"]/, category: 'Cloud Credential', severity: 'critical' },
-  { name: 'Google API Key', regex: /AIza[0-9A-Za-z\-_]{35}/, category: 'API Key', severity: 'critical' },
-  { name: 'Google OAuth Client ID', regex: /[0-9]+-[0-9A-Za-z_]{32}\.apps\.googleusercontent\.com/, category: 'OAuth', severity: 'high' },
-  { name: 'Google Cloud API Key', regex: /(?i)google.{0,10}(api.?key|cloud.?key).{0,10}['"][A-Za-z0-9_\-]{25,}['"]/, category: 'API Key', severity: 'critical' },
-  { name: 'Slack Bot Token', regex: /xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[A-Za-z0-9\-_]{24,}/, category: 'API Key', severity: 'high' },
-  { name: 'Slack Webhook URL', regex: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+/, category: 'API Key', severity: 'high' },
-  { name: 'Stripe Secret Key', regex: /sk_(live|test)_[A-Za-z0-9]{24,}/, category: 'API Key', severity: 'critical' },
-  { name: 'Stripe Publishable Key', regex: /pk_(live|test)_[A-Za-z0-9]{24,}/, category: 'API Key', severity: 'low' },
-  { name: 'OpenAI API Key', regex: /sk-[A-Za-z0-9]{32,}/, category: 'API Key', severity: 'critical' },
-  { name: 'Anthropic API Key', regex: /sk-ant-[A-Za-z0-9\-_]{32,}/, category: 'API Key', severity: 'critical' },
+const SECRET_PATTERNS: {
+  name: string;
+  regex: RegExp;
+  category: string;
+  severity: 'high' | 'critical';
+}[] = [
+  {
+    name: 'GitHub Personal Access Token',
+    regex: /gh[po]_[A-Za-z0-9_]{36,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'GitHub OAuth Token',
+    regex: /gho_[A-Za-z0-9_]{36,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'GitHub App Token',
+    regex: /ghu_[A-Za-z0-9_]{36,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'GitHub Refresh Token',
+    regex: /ghr_[A-Za-z0-9_]{36,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'AWS Access Key ID',
+    regex: /AKIA[0-9A-Z]{16}/,
+    category: 'Cloud Credential',
+    severity: 'critical',
+  },
+  {
+    name: 'AWS Secret Access Key',
+    regex: /(?i)aws.{0,20}secret.{0,20}['"][0-9a-zA-Z/+]{40}['"]/,
+    category: 'Cloud Credential',
+    severity: 'critical',
+  },
+  {
+    name: 'AWS Session Token',
+    regex: /(?i)aws.{0,20}session.{0,20}['"][A-Za-z0-9/+=]{100,}['"]/,
+    category: 'Cloud Credential',
+    severity: 'critical',
+  },
+  {
+    name: 'Google API Key',
+    regex: /AIza[0-9A-Za-z\-_]{35}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'Google OAuth Client ID',
+    regex: /[0-9]+-[0-9A-Za-z_]{32}\.apps\.googleusercontent\.com/,
+    category: 'OAuth',
+    severity: 'high',
+  },
+  {
+    name: 'Google Cloud API Key',
+    regex: /(?i)google.{0,10}(api.?key|cloud.?key).{0,10}['"][A-Za-z0-9_\-]{25,}['"]/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'Slack Bot Token',
+    regex: /xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[A-Za-z0-9\-_]{24,}/,
+    category: 'API Key',
+    severity: 'high',
+  },
+  {
+    name: 'Slack Webhook URL',
+    regex: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+/,
+    category: 'API Key',
+    severity: 'high',
+  },
+  {
+    name: 'Stripe Secret Key',
+    regex: /sk_(live|test)_[A-Za-z0-9]{24,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'Stripe Publishable Key',
+    regex: /pk_(live|test)_[A-Za-z0-9]{24,}/,
+    category: 'API Key',
+    severity: 'low',
+  },
+  {
+    name: 'OpenAI API Key',
+    regex: /sk-[A-Za-z0-9]{32,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'Anthropic API Key',
+    regex: /sk-ant-[A-Za-z0-9\-_]{32,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
   { name: 'Twilio Account SID', regex: /AC[a-f0-9]{32}/, category: 'API Key', severity: 'high' },
-  { name: 'Twilio Auth Token', regex: /(?i)twilio.{0,15}auth.{0,5}token.{0,5}['"][a-f0-9]{32}['"]/, category: 'API Key', severity: 'critical' },
-  { name: 'SendGrid API Key', regex: /SG\.[A-Za-z0-9\-_]{22,}\.[A-Za-z0-9\-_]{22,}/, category: 'API Key', severity: 'critical' },
-  { name: 'Generic API Key Assignment', regex: /(?i)(api[_-]?key|apikey|api[_-]?secret)\s*[:=]\s*['"][A-Za-z0-9\-_+/=]{16,}['"]/, category: 'API Key', severity: 'high' },
-  { name: 'Generic Bearer Token', regex: /(?i)(bearer|token|auth[_-]?token)\s*[:=]\s*['"][A-Za-z0-9\-_+/=]{16,}['"]/, category: 'Token', severity: 'high' },
-  { name: 'Password in Variable', regex: /(?i)(password|passwd|pwd)\s*[:=]\s*['"][^'"]{1,}['"]/, category: 'Password', severity: 'high' },
-  { name: 'Hardcoded Secret', regex: /(?i)(secret|secret[_-]?key)\s*[:=]\s*['"][A-Za-z0-9\-_+/=]{8,}['"]/, category: 'Secret', severity: 'high' },
-  { name: 'Private Key Header', regex: /-----BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY-----/, category: 'Private Key', severity: 'critical' },
-  { name: 'SSH Private Key Header', regex: /-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----/, category: 'Private Key', severity: 'critical' },
-  { name: 'JWT Token', regex: /eyJ[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_.+/=]*/, category: 'Token', severity: 'medium' },
-  { name: 'MongoDB Connection String', regex: /mongodb(\+srv)?:\/\/[^:]+:[^@]+@/, category: 'Connection String', severity: 'critical' },
-  { name: 'PostgreSQL Connection String', regex: /postgres(ql)?:\/\/[^:]+:[^@]+@/, category: 'Connection String', severity: 'critical' },
-  { name: 'MySQL Connection String', regex: /mysql:\/\/[^:]+:[^@]+@/, category: 'Connection String', severity: 'critical' },
-  { name: 'Redis Connection String', regex: /redis:\/\/[^:]+:[^@]+@/, category: 'Connection String', severity: 'critical' },
-  { name: 'JDBC Connection String', regex: /jdbc:[a-z]+:\/\/[^:]+:[^@]+@/, category: 'Connection String', severity: 'critical' },
-  { name: 'Base64 Encoded Secret', regex: /(?i)(secret|token|key|password|credential).{0,10}['"][A-Za-z0-9+/]{40,}={0,2}['"]/, category: 'Secret', severity: 'medium' },
-  { name: 'Hex Encoded Secret', regex: /(?i)(secret|token|key).{0,10}['"][0-9a-fA-F]{32,}['"]/, category: 'Secret', severity: 'medium' },
-  { name: 'Generic OAuth Client Secret', regex: /(?i)(client[_-]?secret|oauth[_-]?secret)\s*[:=]\s*['"][A-Za-z0-9\-_]{16,}['"]/, category: 'OAuth', severity: 'critical' },
-  { name: 'Heroku API Key', regex: /(?i)heroku.{0,10}(api.?key).{0,10}['"][A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}['"]/, category: 'API Key', severity: 'critical' },
-  { name: 'Azure Connection String', regex: /DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[^;]+/, category: 'Connection String', severity: 'critical' },
-  { name: 'npm Auth Token', regex: /\/\/registry\.npmjs\.org\/:_authToken=[A-Za-z0-9\-]+/, category: 'Token', severity: 'high' },
+  {
+    name: 'Twilio Auth Token',
+    regex: /(?i)twilio.{0,15}auth.{0,5}token.{0,5}['"][a-f0-9]{32}['"]/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'SendGrid API Key',
+    regex: /SG\.[A-Za-z0-9\-_]{22,}\.[A-Za-z0-9\-_]{22,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'Generic API Key Assignment',
+    regex: /(?i)(api[_-]?key|apikey|api[_-]?secret)\s*[:=]\s*['"][A-Za-z0-9\-_+/=]{16,}['"]/,
+    category: 'API Key',
+    severity: 'high',
+  },
+  {
+    name: 'Generic Bearer Token',
+    regex: /(?i)(bearer|token|auth[_-]?token)\s*[:=]\s*['"][A-Za-z0-9\-_+/=]{16,}['"]/,
+    category: 'Token',
+    severity: 'high',
+  },
+  {
+    name: 'Password in Variable',
+    regex: /(?i)(password|passwd|pwd)\s*[:=]\s*['"][^'"]{1,}['"]/,
+    category: 'Password',
+    severity: 'high',
+  },
+  {
+    name: 'Hardcoded Secret',
+    regex: /(?i)(secret|secret[_-]?key)\s*[:=]\s*['"][A-Za-z0-9\-_+/=]{8,}['"]/,
+    category: 'Secret',
+    severity: 'high',
+  },
+  {
+    name: 'Private Key Header',
+    regex: /-----BEGIN\s+(RSA|DSA|EC|OPENSSH|PGP)\s+PRIVATE\s+KEY-----/,
+    category: 'Private Key',
+    severity: 'critical',
+  },
+  {
+    name: 'SSH Private Key Header',
+    regex: /-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----/,
+    category: 'Private Key',
+    severity: 'critical',
+  },
+  {
+    name: 'JWT Token',
+    regex: /eyJ[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_.+/=]*/,
+    category: 'Token',
+    severity: 'medium',
+  },
+  {
+    name: 'MongoDB Connection String',
+    regex: /mongodb(\+srv)?:\/\/[^:]+:[^@]+@/,
+    category: 'Connection String',
+    severity: 'critical',
+  },
+  {
+    name: 'PostgreSQL Connection String',
+    regex: /postgres(ql)?:\/\/[^:]+:[^@]+@/,
+    category: 'Connection String',
+    severity: 'critical',
+  },
+  {
+    name: 'MySQL Connection String',
+    regex: /mysql:\/\/[^:]+:[^@]+@/,
+    category: 'Connection String',
+    severity: 'critical',
+  },
+  {
+    name: 'Redis Connection String',
+    regex: /redis:\/\/[^:]+:[^@]+@/,
+    category: 'Connection String',
+    severity: 'critical',
+  },
+  {
+    name: 'JDBC Connection String',
+    regex: /jdbc:[a-z]+:\/\/[^:]+:[^@]+@/,
+    category: 'Connection String',
+    severity: 'critical',
+  },
+  {
+    name: 'Base64 Encoded Secret',
+    regex: /(?i)(secret|token|key|password|credential).{0,10}['"][A-Za-z0-9+/]{40,}={0,2}['"]/,
+    category: 'Secret',
+    severity: 'medium',
+  },
+  {
+    name: 'Hex Encoded Secret',
+    regex: /(?i)(secret|token|key).{0,10}['"][0-9a-fA-F]{32,}['"]/,
+    category: 'Secret',
+    severity: 'medium',
+  },
+  {
+    name: 'Generic OAuth Client Secret',
+    regex: /(?i)(client[_-]?secret|oauth[_-]?secret)\s*[:=]\s*['"][A-Za-z0-9\-_]{16,}['"]/,
+    category: 'OAuth',
+    severity: 'critical',
+  },
+  {
+    name: 'Heroku API Key',
+    regex:
+      /(?i)heroku.{0,10}(api.?key).{0,10}['"][A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}['"]/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'Azure Connection String',
+    regex: /DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[^;]+/,
+    category: 'Connection String',
+    severity: 'critical',
+  },
+  {
+    name: 'npm Auth Token',
+    regex: /\/\/registry\.npmjs\.org\/:_authToken=[A-Za-z0-9\-]+/,
+    category: 'Token',
+    severity: 'high',
+  },
   { name: 'PyPI Token', regex: /pypi-[A-Za-z0-9\-_]{32,}/, category: 'Token', severity: 'high' },
-  { name: 'Docker Hub Token', regex: /(?i)docker.{0,10}(password|token|pass).{0,10}['"][A-Za-z0-9\-_]{8,}['"]/, category: 'Token', severity: 'high' },
-  { name: 'GitLab Personal Access Token', regex: /glpat-[A-Za-z0-9\-_]{20,}/, category: 'API Key', severity: 'critical' },
-  { name: 'Bitbucket App Password', regex: /(?i)bitbucket.{0,10}(password|app.?password).{0,10}['"][A-Za-z0-9]{8,}['"]/, category: 'Password', severity: 'high' },
+  {
+    name: 'Docker Hub Token',
+    regex: /(?i)docker.{0,10}(password|token|pass).{0,10}['"][A-Za-z0-9\-_]{8,}['"]/,
+    category: 'Token',
+    severity: 'high',
+  },
+  {
+    name: 'GitLab Personal Access Token',
+    regex: /glpat-[A-Za-z0-9\-_]{20,}/,
+    category: 'API Key',
+    severity: 'critical',
+  },
+  {
+    name: 'Bitbucket App Password',
+    regex: /(?i)bitbucket.{0,10}(password|app.?password).{0,10}['"][A-Za-z0-9]{8,}['"]/,
+    category: 'Password',
+    severity: 'high',
+  },
 ];
 
 const OWASP_2021_CATEGORIES: Record<string, { id: string; name: string }> = {
@@ -107,7 +308,13 @@ const SEVERITY_SCORES: Record<string, number> = {
   critical: 10,
 };
 
-const SAST_RULES: { id: string; name: string; pattern: { [lang: string]: RegExp }; owasp2021: string; owasp2017: string }[] = [
+const SAST_RULES: {
+  id: string;
+  name: string;
+  pattern: { [lang: string]: RegExp };
+  owasp2021: string;
+  owasp2017: string;
+}[] = [
   {
     id: 'sql-injection',
     name: 'SQL Injection',
@@ -138,7 +345,8 @@ const SAST_RULES: { id: string; name: string; pattern: { [lang: string]: RegExp 
     name: 'Command Injection',
     pattern: {
       js: /(?i)(exec|spawn|execSync|spawnSync|child_process)\s*\(\s*.*\$?\{/,
-      py: /(?i)(os\.system|os\.popen|subprocess\.call|subprocess\.Popen|subprocess\.run)\s*\(\s*.*\{/,
+      py:
+        /(?i)(os\.system|os\.popen|subprocess\.call|subprocess\.Popen|subprocess\.run)\s*\(\s*.*\{/,
       java: /Runtime\.getRuntime\(\)\.exec\s*\(\s*.*\+/,
       go: /(?i)exec\.Command\s*\(\s*.*\+/,
     },
@@ -149,7 +357,8 @@ const SAST_RULES: { id: string; name: string; pattern: { [lang: string]: RegExp 
     id: 'path-traversal',
     name: 'Path Traversal',
     pattern: {
-      js: /(?i)(fs\.readFile|fs\.readFileSync|fs\.writeFile|fs\.createReadStream|require)\s*\(\s*.*\.\./,
+      js:
+        /(?i)(fs\.readFile|fs\.readFileSync|fs\.writeFile|fs\.createReadStream|require)\s*\(\s*.*\.\./,
       py: /(?i)(open|io\.open)\s*\(\s*.*\.\./,
       java: /(?i)(FileInputStream|FileReader|File)\s*\(\s*.*\.\./,
       go: /(?i)(ioutil\.ReadFile|os\.Open|os\.ReadFile)\s*\(\s*.*\.\./,
@@ -195,28 +404,175 @@ const SAST_RULES: { id: string; name: string; pattern: { [lang: string]: RegExp 
   },
 ];
 
-function getVulnerabilityDatabase(): { name: string; severity: 'low' | 'medium' | 'high' | 'critical'; cve: string; cvss: number; description: string; fixedVersion: string }[] {
+function getVulnerabilityDatabase(): {
+  name: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  cve: string;
+  cvss: number;
+  description: string;
+  fixedVersion: string;
+}[] {
   return [
-    { name: 'lodash', severity: 'high', cve: 'CVE-2021-23337', cvss: 7.2, description: 'Command injection in lodash template engine', fixedVersion: '4.17.21' },
-    { name: 'axios', severity: 'medium', cve: 'CVE-2023-45857', cvss: 5.5, description: 'Cross-Site Request Forgery in axios', fixedVersion: '1.6.0' },
-    { name: 'express', severity: 'medium', cve: 'CVE-2024-29041', cvss: 5.3, description: 'Open redirect vulnerability in Express.js', fixedVersion: '4.19.0' },
-    { name: 'semver', severity: 'high', cve: 'CVE-2022-25883', cvss: 7.5, description: 'Regular expression denial of service in semver', fixedVersion: '7.5.2' },
-    { name: 'follow-redirects', severity: 'high', cve: 'CVE-2024-28849', cvss: 8.0, description: 'Information disclosure through redirects', fixedVersion: '1.15.6' },
-    { name: 'requests', severity: 'medium', cve: 'CVE-2023-32681', cvss: 4.2, description: 'Proxy-Authorization header leak in HTTP redirects', fixedVersion: '2.31.0' },
-    { name: 'urllib3', severity: 'high', cve: 'CVE-2023-43804', cvss: 7.3, description: 'Cross-origin redirect cookie leak', fixedVersion: '2.0.6' },
-    { name: 'cryptography', severity: 'high', cve: 'CVE-2024-26130', cvss: 7.5, description: 'NULL pointer dereference in OpenSSL bindings', fixedVersion: '42.0.4' },
-    { name: 'django', severity: 'high', cve: 'CVE-2024-24680', cvss: 7.5, description: 'Denial of service via intcomma template filter', fixedVersion: '5.0.2' },
-    { name: 'flask', severity: 'medium', cve: 'CVE-2023-30861', cvss: 4.8, description: 'Cookie parsing vulnerability in Flask', fixedVersion: '2.3.2' },
-    { name: 'serde', severity: 'low', cve: 'CVE-2024-0000', cvss: 2.1, description: 'Uninitialized memory read in serde deserializer', fixedVersion: '1.0.195' },
-    { name: 'tokio', severity: 'medium', cve: 'CVE-2024-0101', cvss: 5.9, description: 'Data race in Tokio runtime scheduler', fixedVersion: '1.36.0' },
-    { name: 'golang.org/x/net', severity: 'high', cve: 'CVE-2023-44487', cvss: 7.5, description: 'HTTP/2 Rapid Reset attack vulnerability', fixedVersion: '0.17.0' },
-    { name: 'golang.org/x/crypto', severity: 'medium', cve: 'CVE-2024-0204', cvss: 4.1, description: 'Insecure SSH key validation', fixedVersion: '0.18.0' },
-    { name: 'jsonwebtoken', severity: 'high', cve: 'CVE-2022-23529', cvss: 7.6, description: 'Remote code execution via malicious JWT', fixedVersion: '9.0.0' },
-    { name: 'minimist', severity: 'critical', cve: 'CVE-2021-44906', cvss: 9.8, description: 'Prototype pollution in minimist', fixedVersion: '1.2.6' },
-    { name: 'node-fetch', severity: 'high', cve: 'CVE-2022-0235', cvss: 7.7, description: 'SSRF via fetch to localhost', fixedVersion: '3.2.10' },
-    { name: 'pyyaml', severity: 'critical', cve: 'CVE-2020-14343', cvss: 9.8, description: 'Arbitrary code execution via full_load', fixedVersion: '5.4.0' },
-    { name: 'pillow', severity: 'high', cve: 'CVE-2023-50447', cvss: 7.1, description: 'Arbitrary code execution in PIL.ImageMath', fixedVersion: '10.2.0' },
-    { name: 'log4j', severity: 'critical', cve: 'CVE-2021-44228', cvss: 10.0, description: 'Remote code execution via JNDI lookup', fixedVersion: '2.16.0' },
+    {
+      name: 'lodash',
+      severity: 'high',
+      cve: 'CVE-2021-23337',
+      cvss: 7.2,
+      description: 'Command injection in lodash template engine',
+      fixedVersion: '4.17.21',
+    },
+    {
+      name: 'axios',
+      severity: 'medium',
+      cve: 'CVE-2023-45857',
+      cvss: 5.5,
+      description: 'Cross-Site Request Forgery in axios',
+      fixedVersion: '1.6.0',
+    },
+    {
+      name: 'express',
+      severity: 'medium',
+      cve: 'CVE-2024-29041',
+      cvss: 5.3,
+      description: 'Open redirect vulnerability in Express.js',
+      fixedVersion: '4.19.0',
+    },
+    {
+      name: 'semver',
+      severity: 'high',
+      cve: 'CVE-2022-25883',
+      cvss: 7.5,
+      description: 'Regular expression denial of service in semver',
+      fixedVersion: '7.5.2',
+    },
+    {
+      name: 'follow-redirects',
+      severity: 'high',
+      cve: 'CVE-2024-28849',
+      cvss: 8.0,
+      description: 'Information disclosure through redirects',
+      fixedVersion: '1.15.6',
+    },
+    {
+      name: 'requests',
+      severity: 'medium',
+      cve: 'CVE-2023-32681',
+      cvss: 4.2,
+      description: 'Proxy-Authorization header leak in HTTP redirects',
+      fixedVersion: '2.31.0',
+    },
+    {
+      name: 'urllib3',
+      severity: 'high',
+      cve: 'CVE-2023-43804',
+      cvss: 7.3,
+      description: 'Cross-origin redirect cookie leak',
+      fixedVersion: '2.0.6',
+    },
+    {
+      name: 'cryptography',
+      severity: 'high',
+      cve: 'CVE-2024-26130',
+      cvss: 7.5,
+      description: 'NULL pointer dereference in OpenSSL bindings',
+      fixedVersion: '42.0.4',
+    },
+    {
+      name: 'django',
+      severity: 'high',
+      cve: 'CVE-2024-24680',
+      cvss: 7.5,
+      description: 'Denial of service via intcomma template filter',
+      fixedVersion: '5.0.2',
+    },
+    {
+      name: 'flask',
+      severity: 'medium',
+      cve: 'CVE-2023-30861',
+      cvss: 4.8,
+      description: 'Cookie parsing vulnerability in Flask',
+      fixedVersion: '2.3.2',
+    },
+    {
+      name: 'serde',
+      severity: 'low',
+      cve: 'CVE-2024-0000',
+      cvss: 2.1,
+      description: 'Uninitialized memory read in serde deserializer',
+      fixedVersion: '1.0.195',
+    },
+    {
+      name: 'tokio',
+      severity: 'medium',
+      cve: 'CVE-2024-0101',
+      cvss: 5.9,
+      description: 'Data race in Tokio runtime scheduler',
+      fixedVersion: '1.36.0',
+    },
+    {
+      name: 'golang.org/x/net',
+      severity: 'high',
+      cve: 'CVE-2023-44487',
+      cvss: 7.5,
+      description: 'HTTP/2 Rapid Reset attack vulnerability',
+      fixedVersion: '0.17.0',
+    },
+    {
+      name: 'golang.org/x/crypto',
+      severity: 'medium',
+      cve: 'CVE-2024-0204',
+      cvss: 4.1,
+      description: 'Insecure SSH key validation',
+      fixedVersion: '0.18.0',
+    },
+    {
+      name: 'jsonwebtoken',
+      severity: 'high',
+      cve: 'CVE-2022-23529',
+      cvss: 7.6,
+      description: 'Remote code execution via malicious JWT',
+      fixedVersion: '9.0.0',
+    },
+    {
+      name: 'minimist',
+      severity: 'critical',
+      cve: 'CVE-2021-44906',
+      cvss: 9.8,
+      description: 'Prototype pollution in minimist',
+      fixedVersion: '1.2.6',
+    },
+    {
+      name: 'node-fetch',
+      severity: 'high',
+      cve: 'CVE-2022-0235',
+      cvss: 7.7,
+      description: 'SSRF via fetch to localhost',
+      fixedVersion: '3.2.10',
+    },
+    {
+      name: 'pyyaml',
+      severity: 'critical',
+      cve: 'CVE-2020-14343',
+      cvss: 9.8,
+      description: 'Arbitrary code execution via full_load',
+      fixedVersion: '5.4.0',
+    },
+    {
+      name: 'pillow',
+      severity: 'high',
+      cve: 'CVE-2023-50447',
+      cvss: 7.1,
+      description: 'Arbitrary code execution in PIL.ImageMath',
+      fixedVersion: '10.2.0',
+    },
+    {
+      name: 'log4j',
+      severity: 'critical',
+      cve: 'CVE-2021-44228',
+      cvss: 10.0,
+      description: 'Remote code execution via JNDI lookup',
+      fixedVersion: '2.16.0',
+    },
   ];
 }
 
@@ -269,7 +625,11 @@ async function detectPackageManager(projectPath: string): Promise<string> {
   return 'npm';
 }
 
-function runSastScans(targetPath: string, language: string, enabledRules?: string[]): AuditFinding[] {
+function runSastScans(
+  targetPath: string,
+  language: string,
+  enabledRules?: string[],
+): AuditFinding[] {
   const findings: AuditFinding[] = [];
 
   for (const rule of SAST_RULES) {
@@ -278,9 +638,12 @@ function runSastScans(targetPath: string, language: string, enabledRules?: strin
     findings.push({
       id: `SAST-${rule.id}-${Date.now()}`,
       tool: 'audit_sast',
-      severity: rule.id === 'sql-injection' || rule.id === 'command-injection' ? 'critical' : 'high',
+      severity: rule.id === 'sql-injection' || rule.id === 'command-injection'
+        ? 'critical'
+        : 'high',
       title: `Potential ${rule.name} detected`,
-      description: `The code may contain ${rule.name.toLowerCase()} patterns. Review the location for untrusted input handling.`,
+      description:
+        `The code may contain ${rule.name.toLowerCase()} patterns. Review the location for untrusted input handling.`,
       file: `${targetPath}/example.${language === 'js' ? 'ts' : language}`,
       line: Math.floor(Math.random() * 200) + 1,
       snippet: langPattern.source,
@@ -430,11 +793,17 @@ function generateHtmlReport(findings: AuditFinding[], includeRemediation: boolea
 <ul>
 <li><strong>ID:</strong> ${finding.id}</li>
 <li><strong>Tool:</strong> ${finding.tool}</li>`;
-    if (finding.cve) html += `<li><strong>CVE:</strong> ${finding.cve} (CVSS: ${finding.cvss})</li>`;
+    if (finding.cve) {
+      html += `<li><strong>CVE:</strong> ${finding.cve} (CVSS: ${finding.cvss})</li>`;
+    }
     if (finding.owasp) html += `<li><strong>OWASP:</strong> ${finding.owasp}</li>`;
     if (finding.file) html += `<li><strong>File:</strong> <code>${finding.file}</code></li>`;
     if (finding.line) html += `<li><strong>Line:</strong> ${finding.line}</li>`;
-    if (finding.packageName) html += `<li><strong>Package:</strong> ${finding.packageName}${finding.currentVersion ? ` (${finding.currentVersion})` : ''}${finding.fixedVersion ? ` &rarr; Fixed in ${finding.fixedVersion}` : ''}</li>`;
+    if (finding.packageName) {
+      html += `<li><strong>Package:</strong> ${finding.packageName}${
+        finding.currentVersion ? ` (${finding.currentVersion})` : ''
+      }${finding.fixedVersion ? ` &rarr; Fixed in ${finding.fixedVersion}` : ''}</li>`;
+    }
     html += `</ul><p>${finding.description}</p>`;
     if (includeRemediation && finding.remediation) {
       html += `<p><strong>Remediation:</strong> ${finding.remediation}</p>`;
@@ -451,11 +820,31 @@ function generateHtmlReport(findings: AuditFinding[], includeRemediation: boolea
 const auditDependenciesTool: Tool = {
   definition: {
     name: 'audit_dependencies',
-    description: 'Scan project dependencies for known vulnerabilities using package manager audit tools.',
+    description:
+      'Scan project dependencies for known vulnerabilities using package manager audit tools.',
     params: [
-      { name: 'project_path', type: 'string', description: 'Path to the project root directory', required: true },
-      { name: 'package_manager', type: 'string', description: 'Package manager to use for scanning', required: false, enum: ['npm', 'pip', 'cargo', 'gomod', 'auto'], default: 'auto' },
-      { name: 'output_format', type: 'string', description: 'Output format for results', required: false, enum: ['json', 'markdown'], default: 'json' },
+      {
+        name: 'project_path',
+        type: 'string',
+        description: 'Path to the project root directory',
+        required: true,
+      },
+      {
+        name: 'package_manager',
+        type: 'string',
+        description: 'Package manager to use for scanning',
+        required: false,
+        enum: ['npm', 'pip', 'cargo', 'gomod', 'auto'],
+        default: 'auto',
+      },
+      {
+        name: 'output_format',
+        type: 'string',
+        description: 'Output format for results',
+        required: false,
+        enum: ['json', 'markdown'],
+        default: 'json',
+      },
     ],
     capabilities: ['shell:run', 'fs:read'],
   },
@@ -465,13 +854,22 @@ const auditDependenciesTool: Tool = {
     try {
       const projectPath = args.project_path as string;
       if (!projectPath || typeof projectPath !== 'string') {
-        return buildToolResult('audit_dependencies', false, '', 'project_path must be a non-empty string', undefined, start);
+        return buildToolResult(
+          'audit_dependencies',
+          false,
+          '',
+          'project_path must be a non-empty string',
+          undefined,
+          start,
+        );
       }
 
       const packageManager = (args.package_manager as string) || 'auto';
       const outputFormat = (args.output_format as string) || 'json';
 
-      const manager = packageManager === 'auto' ? await detectPackageManager(projectPath) : packageManager;
+      const manager = packageManager === 'auto'
+        ? await detectPackageManager(projectPath)
+        : packageManager;
       const vulnDb = getVulnerabilityDatabase();
       const findings: AuditFinding[] = [];
 
@@ -487,7 +885,13 @@ const auditDependenciesTool: Tool = {
             cve: vuln.cve,
             cvss: vuln.cvss,
             owasp: vuln.severity === 'critical' ? 'A06:2021' : 'A06:2021',
-            remediation: `Upgrade ${vuln.name} to version ${vuln.fixedVersion} or later. Run \`${manager === 'npm' ? 'npm update ' + vuln.name : manager === 'pip' ? 'pip install --upgrade ' + vuln.name : manager + ' update ' + vuln.name}\`.`,
+            remediation: `Upgrade ${vuln.name} to version ${vuln.fixedVersion} or later. Run \`${
+              manager === 'npm'
+                ? 'npm update ' + vuln.name
+                : manager === 'pip'
+                ? 'pip install --upgrade ' + vuln.name
+                : manager + ' update ' + vuln.name
+            }\`.`,
             packageName: vuln.name,
             currentVersion: '1.0.0',
             fixedVersion: vuln.fixedVersion,
@@ -501,12 +905,23 @@ const auditDependenciesTool: Tool = {
           ? `# Dependency Audit: ${projectPath}\n\nNo vulnerabilities found for ${manager}.\n`
           : generateMarkdownReport(findings, true);
       } else {
-        output = JSON.stringify({ projectPath, packageManager: manager, totalFindings: findings.length, findings }, null, 2);
+        output = JSON.stringify(
+          { projectPath, packageManager: manager, totalFindings: findings.length, findings },
+          null,
+          2,
+        );
       }
 
       return buildToolResult('audit_dependencies', true, output, undefined, undefined, start);
     } catch (error) {
-      return buildToolResult('audit_dependencies', false, '', `Dependency audit failed: ${error instanceof Error ? error.message : String(error)}`, undefined, start);
+      return buildToolResult(
+        'audit_dependencies',
+        false,
+        '',
+        `Dependency audit failed: ${error instanceof Error ? error.message : String(error)}`,
+        undefined,
+        start,
+      );
     }
   },
 };
@@ -516,9 +931,25 @@ const auditSecretsTool: Tool = {
     name: 'audit_secrets',
     description: 'Scan codebase for hardcoded secrets, credentials, API keys, and tokens.',
     params: [
-      { name: 'target_path', type: 'string', description: 'Path to the directory or file to scan', required: true },
-      { name: 'file_patterns', type: 'string', description: "Comma-separated glob patterns for files to scan (e.g. '*.ts,*.js,*.py')", required: false },
-      { name: 'exclude_dirs', type: 'string', description: 'Comma-separated directories to exclude from scan', required: false, default: 'node_modules,.git,dist,build' },
+      {
+        name: 'target_path',
+        type: 'string',
+        description: 'Path to the directory or file to scan',
+        required: true,
+      },
+      {
+        name: 'file_patterns',
+        type: 'string',
+        description: "Comma-separated glob patterns for files to scan (e.g. '*.ts,*.js,*.py')",
+        required: false,
+      },
+      {
+        name: 'exclude_dirs',
+        type: 'string',
+        description: 'Comma-separated directories to exclude from scan',
+        required: false,
+        default: 'node_modules,.git,dist,build',
+      },
     ],
     capabilities: ['fs:read'],
   },
@@ -528,16 +959,39 @@ const auditSecretsTool: Tool = {
     try {
       const targetPath = args.target_path as string;
       if (!targetPath || typeof targetPath !== 'string') {
-        return buildToolResult('audit_secrets', false, '', 'target_path must be a non-empty string', undefined, start);
+        return buildToolResult(
+          'audit_secrets',
+          false,
+          '',
+          'target_path must be a non-empty string',
+          undefined,
+          start,
+        );
       }
 
       const filePatterns = args.file_patterns as string | undefined;
       const excludeDirs = (args.exclude_dirs as string) || pluginConfig.excludeDirs;
       const excludeSet = new Set(excludeDirs.split(',').map((d) => d.trim()));
 
-      const patterns = filePatterns
-        ? filePatterns.split(',').map((p) => p.trim())
-        : ['*.ts', '*.tsx', '*.js', '*.jsx', '*.py', '*.java', '*.go', '*.rb', '*.php', '*.rs', '*.yaml', '*.yml', '*.json', '*.env', '*.toml', '*.cfg', '*.ini'];
+      const patterns = filePatterns ? filePatterns.split(',').map((p) => p.trim()) : [
+        '*.ts',
+        '*.tsx',
+        '*.js',
+        '*.jsx',
+        '*.py',
+        '*.java',
+        '*.go',
+        '*.rb',
+        '*.php',
+        '*.rs',
+        '*.yaml',
+        '*.yml',
+        '*.json',
+        '*.env',
+        '*.toml',
+        '*.cfg',
+        '*.ini',
+      ];
 
       const findings: AuditFinding[] = [];
       const scannedFiles: string[] = [];
@@ -584,7 +1038,8 @@ const auditSecretsTool: Tool = {
           tool: 'audit_secrets',
           severity: 'low',
           title: 'No files scanned',
-          description: `No matching files found in ${targetPath}. Check the file_patterns and exclude_dirs settings.`,
+          description:
+            `No matching files found in ${targetPath}. Check the file_patterns and exclude_dirs settings.`,
         });
       } else {
         for (const filePath of scannedFiles) {
@@ -592,33 +1047,48 @@ const auditSecretsTool: Tool = {
             const shouldMatch = Math.random() > 0.55;
             if (shouldMatch && meetsThreshold(pattern.severity, pluginConfig.severityThreshold)) {
               findings.push({
-                id: `SEC-${pattern.name.replace(/\s+/g, '-')}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                id: `SEC-${pattern.name.replace(/\s+/g, '-')}-${Date.now()}-${
+                  Math.random().toString(36).slice(2, 8)
+                }`,
                 tool: 'audit_secrets',
                 severity: pattern.severity,
                 title: `Potential ${pattern.name} found`,
-                description: `A pattern matching ${pattern.name} was detected. This should be stored in environment variables or a secure vault, not in source code.`,
+                description:
+                  `A pattern matching ${pattern.name} was detected. This should be stored in environment variables or a secure vault, not in source code.`,
                 file: filePath,
                 line: Math.floor(Math.random() * 150) + 1,
                 snippet: pattern.regex.source,
                 owasp: 'A05:2021',
-                remediation: `Remove the hardcoded ${pattern.category.toLowerCase()} and use environment variables (process.env) or a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Doppler.`,
+                remediation:
+                  `Remove the hardcoded ${pattern.category.toLowerCase()} and use environment variables (process.env) or a secrets manager like AWS Secrets Manager, HashiCorp Vault, or Doppler.`,
               });
             }
           }
         }
       }
 
-      const output = JSON.stringify({
-        targetPath,
-        filesScanned: scannedFiles.length,
-        patternsApplied: SECRET_PATTERNS.length,
-        totalFindings: findings.length,
-        findings,
-      }, null, 2);
+      const output = JSON.stringify(
+        {
+          targetPath,
+          filesScanned: scannedFiles.length,
+          patternsApplied: SECRET_PATTERNS.length,
+          totalFindings: findings.length,
+          findings,
+        },
+        null,
+        2,
+      );
 
       return buildToolResult('audit_secrets', true, output, undefined, undefined, start);
     } catch (error) {
-      return buildToolResult('audit_secrets', false, '', `Secret audit failed: ${error instanceof Error ? error.message : String(error)}`, undefined, start);
+      return buildToolResult(
+        'audit_secrets',
+        false,
+        '',
+        `Secret audit failed: ${error instanceof Error ? error.message : String(error)}`,
+        undefined,
+        start,
+      );
     }
   },
 };
@@ -626,11 +1096,28 @@ const auditSecretsTool: Tool = {
 const auditSastTool: Tool = {
   definition: {
     name: 'audit_sast',
-    description: 'Static analysis security testing for common vulnerability patterns in source code.',
+    description:
+      'Static analysis security testing for common vulnerability patterns in source code.',
     params: [
-      { name: 'target_path', type: 'string', description: 'Path to the directory or file to analyze', required: true },
-      { name: 'language', type: 'string', description: 'Programming language of the target code', required: true },
-      { name: 'rules', type: 'string', description: 'Comma-separated rule categories to apply (owasp_top10,injection,xss,auth,crypto)', required: false },
+      {
+        name: 'target_path',
+        type: 'string',
+        description: 'Path to the directory or file to analyze',
+        required: true,
+      },
+      {
+        name: 'language',
+        type: 'string',
+        description: 'Programming language of the target code',
+        required: true,
+      },
+      {
+        name: 'rules',
+        type: 'string',
+        description:
+          'Comma-separated rule categories to apply (owasp_top10,injection,xss,auth,crypto)',
+        required: false,
+      },
     ],
     capabilities: ['fs:read'],
   },
@@ -640,16 +1127,45 @@ const auditSastTool: Tool = {
     try {
       const targetPath = args.target_path as string;
       if (!targetPath || typeof targetPath !== 'string') {
-        return buildToolResult('audit_sast', false, '', 'target_path must be a non-empty string', undefined, start);
+        return buildToolResult(
+          'audit_sast',
+          false,
+          '',
+          'target_path must be a non-empty string',
+          undefined,
+          start,
+        );
       }
 
       const language = (args.language as string)?.toLowerCase() || '';
-      const validLangs = ['js', 'ts', 'javascript', 'typescript', 'py', 'python', 'java', 'go', 'php'];
-      const langMap: Record<string, string> = { javascript: 'js', typescript: 'js', python: 'py', ts: 'js' };
+      const validLangs = [
+        'js',
+        'ts',
+        'javascript',
+        'typescript',
+        'py',
+        'python',
+        'java',
+        'go',
+        'php',
+      ];
+      const langMap: Record<string, string> = {
+        javascript: 'js',
+        typescript: 'js',
+        python: 'py',
+        ts: 'js',
+      };
       const normalizedLang = langMap[language] || language;
 
       if (!validLangs.includes(language) && !validLangs.includes(normalizedLang)) {
-        return buildToolResult('audit_sast', false, '', `Unsupported language: ${language}. Supported: ${validLangs.join(', ')}`, undefined, start);
+        return buildToolResult(
+          'audit_sast',
+          false,
+          '',
+          `Unsupported language: ${language}. Supported: ${validLangs.join(', ')}`,
+          undefined,
+          start,
+        );
       }
 
       const rulesParam = args.rules as string | undefined;
@@ -663,27 +1179,40 @@ const auditSastTool: Tool = {
 
       let enabledRules: string[] | undefined;
       if (rulesParam) {
-        enabledRules = [...new Set(
-          rulesParam.split(',').flatMap((r) => {
-            const trimmed = r.trim();
-            return ruleMapping[trimmed] || [trimmed];
-          })
-        )];
+        enabledRules = [
+          ...new Set(
+            rulesParam.split(',').flatMap((r) => {
+              const trimmed = r.trim();
+              return ruleMapping[trimmed] || [trimmed];
+            }),
+          ),
+        ];
       }
 
       const findings = runSastScans(targetPath, normalizedLang, enabledRules);
 
-      const output = JSON.stringify({
-        targetPath,
-        language: normalizedLang,
-        rulesApplied: enabledRules || SAST_RULES.map((r) => r.id),
-        totalFindings: findings.length,
-        findings,
-      }, null, 2);
+      const output = JSON.stringify(
+        {
+          targetPath,
+          language: normalizedLang,
+          rulesApplied: enabledRules || SAST_RULES.map((r) => r.id),
+          totalFindings: findings.length,
+          findings,
+        },
+        null,
+        2,
+      );
 
       return buildToolResult('audit_sast', true, output, undefined, undefined, start);
     } catch (error) {
-      return buildToolResult('audit_sast', false, '', `SAST audit failed: ${error instanceof Error ? error.message : String(error)}`, undefined, start);
+      return buildToolResult(
+        'audit_sast',
+        false,
+        '',
+        `SAST audit failed: ${error instanceof Error ? error.message : String(error)}`,
+        undefined,
+        start,
+      );
     }
   },
 };
@@ -693,8 +1222,20 @@ const auditOwaspTool: Tool = {
     name: 'audit_owasp',
     description: 'OWASP Top 10 compliance check against target project.',
     params: [
-      { name: 'target_path', type: 'string', description: 'Path to the project directory to check', required: true },
-      { name: 'year', type: 'string', description: 'OWASP Top 10 version year', required: false, enum: ['2021', '2017'], default: '2021' },
+      {
+        name: 'target_path',
+        type: 'string',
+        description: 'Path to the project directory to check',
+        required: true,
+      },
+      {
+        name: 'year',
+        type: 'string',
+        description: 'OWASP Top 10 version year',
+        required: false,
+        enum: ['2021', '2017'],
+        default: '2021',
+      },
     ],
     capabilities: ['fs:read'],
   },
@@ -704,24 +1245,43 @@ const auditOwaspTool: Tool = {
     try {
       const targetPath = args.target_path as string;
       if (!targetPath || typeof targetPath !== 'string') {
-        return buildToolResult('audit_owasp', false, '', 'target_path must be a non-empty string', undefined, start);
+        return buildToolResult(
+          'audit_owasp',
+          false,
+          '',
+          'target_path must be a non-empty string',
+          undefined,
+          start,
+        );
       }
 
       const year = (args.year as string) || '2021';
       const findings = runOwaspCheck(targetPath, year);
 
-      const output = JSON.stringify({
-        targetPath,
-        owaspVersion: year,
-        categoriesChecked: Object.keys(year === '2021' ? OWASP_2021_CATEGORIES : OWASP_2017_CATEGORIES).length,
-        categoriesPassed: findings.filter((f) => f.severity === 'low').length,
-        categoriesFlagged: findings.filter((f) => f.severity !== 'low').length,
-        findings,
-      }, null, 2);
+      const output = JSON.stringify(
+        {
+          targetPath,
+          owaspVersion: year,
+          categoriesChecked:
+            Object.keys(year === '2021' ? OWASP_2021_CATEGORIES : OWASP_2017_CATEGORIES).length,
+          categoriesPassed: findings.filter((f) => f.severity === 'low').length,
+          categoriesFlagged: findings.filter((f) => f.severity !== 'low').length,
+          findings,
+        },
+        null,
+        2,
+      );
 
       return buildToolResult('audit_owasp', true, output, undefined, undefined, start);
     } catch (error) {
-      return buildToolResult('audit_owasp', false, '', `OWASP audit failed: ${error instanceof Error ? error.message : String(error)}`, undefined, start);
+      return buildToolResult(
+        'audit_owasp',
+        false,
+        '',
+        `OWASP audit failed: ${error instanceof Error ? error.message : String(error)}`,
+        undefined,
+        start,
+      );
     }
   },
 };
@@ -731,9 +1291,27 @@ const auditGenerateReportTool: Tool = {
     name: 'audit_generate_report',
     description: 'Generate a comprehensive security audit report from findings.',
     params: [
-      { name: 'findings', type: 'string', description: 'JSON array of findings from other audit tools', required: true },
-      { name: 'format', type: 'string', description: 'Output format for the report', required: false, enum: ['markdown', 'json', 'html'], default: 'markdown' },
-      { name: 'include_remediation', type: 'boolean', description: 'Include remediation guidance in the report', required: false, default: true },
+      {
+        name: 'findings',
+        type: 'string',
+        description: 'JSON array of findings from other audit tools',
+        required: true,
+      },
+      {
+        name: 'format',
+        type: 'string',
+        description: 'Output format for the report',
+        required: false,
+        enum: ['markdown', 'json', 'html'],
+        default: 'markdown',
+      },
+      {
+        name: 'include_remediation',
+        type: 'boolean',
+        description: 'Include remediation guidance in the report',
+        required: false,
+        default: true,
+      },
     ],
     capabilities: [],
   },
@@ -743,7 +1321,14 @@ const auditGenerateReportTool: Tool = {
     try {
       const findingsRaw = args.findings as string;
       if (!findingsRaw || typeof findingsRaw !== 'string') {
-        return buildToolResult('audit_generate_report', false, '', 'findings must be a non-empty JSON string', undefined, start);
+        return buildToolResult(
+          'audit_generate_report',
+          false,
+          '',
+          'findings must be a non-empty JSON string',
+          undefined,
+          start,
+        );
       }
 
       let findings: AuditFinding[];
@@ -753,7 +1338,14 @@ const auditGenerateReportTool: Tool = {
           findings = JSON.parse(findingsRaw).findings || [];
         }
       } catch {
-        return buildToolResult('audit_generate_report', false, '', 'findings must be valid JSON', undefined, start);
+        return buildToolResult(
+          'audit_generate_report',
+          false,
+          '',
+          'findings must be valid JSON',
+          undefined,
+          start,
+        );
       }
 
       const format = (args.format as string) || 'markdown';
@@ -765,18 +1357,27 @@ const auditGenerateReportTool: Tool = {
           output = generateHtmlReport(findings, includeRemediation);
           break;
         case 'json':
-          output = JSON.stringify({
-            generated: new Date().toISOString(),
-            totalFindings: findings.length,
-            severitySummary: {
-              critical: findings.filter((f) => f.severity === 'critical').length,
-              high: findings.filter((f) => f.severity === 'high').length,
-              medium: findings.filter((f) => f.severity === 'medium').length,
-              low: findings.filter((f) => f.severity === 'low').length,
+          output = JSON.stringify(
+            {
+              generated: new Date().toISOString(),
+              totalFindings: findings.length,
+              severitySummary: {
+                critical: findings.filter((f) => f.severity === 'critical').length,
+                high: findings.filter((f) => f.severity === 'high').length,
+                medium: findings.filter((f) => f.severity === 'medium').length,
+                low: findings.filter((f) => f.severity === 'low').length,
+              },
+              totalRiskScore: findings.reduce(
+                (sum, f) => sum + (SEVERITY_SCORES[f.severity] || 0),
+                0,
+              ),
+              findings: includeRemediation
+                ? findings
+                : findings.map(({ remediation, ...rest }) => rest),
             },
-            totalRiskScore: findings.reduce((sum, f) => sum + (SEVERITY_SCORES[f.severity] || 0), 0),
-            findings: includeRemediation ? findings : findings.map(({ remediation, ...rest }) => rest),
-          }, null, 2);
+            null,
+            2,
+          );
           break;
         default:
           output = generateMarkdownReport(findings, includeRemediation);
@@ -785,7 +1386,14 @@ const auditGenerateReportTool: Tool = {
 
       return buildToolResult('audit_generate_report', true, output, undefined, undefined, start);
     } catch (error) {
-      return buildToolResult('audit_generate_report', false, '', `Report generation failed: ${error instanceof Error ? error.message : String(error)}`, undefined, start);
+      return buildToolResult(
+        'audit_generate_report',
+        false,
+        '',
+        `Report generation failed: ${error instanceof Error ? error.message : String(error)}`,
+        undefined,
+        start,
+      );
     }
   },
 };
@@ -806,18 +1414,62 @@ const auditStatusTool: Tool = {
         version: '1.0.0',
         config: pluginConfig,
         tools: [
-          { name: 'audit_dependencies', description: 'Scan project dependencies for known vulnerabilities', capabilities: ['shell:run', 'fs:read'] },
-          { name: 'audit_secrets', description: 'Scan codebase for hardcoded secrets and credentials', capabilities: ['fs:read'], patterns: SECRET_PATTERNS.length, categories: [...new Set(SECRET_PATTERNS.map((p) => p.category))] },
-          { name: 'audit_sast', description: 'Static analysis security testing', capabilities: ['fs:read'], rules: SAST_RULES.map((r) => r.name), languages: ['javascript', 'typescript', 'python', 'java', 'go', 'php'] },
-          { name: 'audit_owasp', description: 'OWASP Top 10 compliance check', capabilities: ['fs:read'], versions: ['2021', '2017'] },
-          { name: 'audit_generate_report', description: 'Generate comprehensive security audit report', capabilities: [], formats: ['markdown', 'json', 'html'] },
-          { name: 'audit_status', description: 'Check available audit capabilities', capabilities: [] },
+          {
+            name: 'audit_dependencies',
+            description: 'Scan project dependencies for known vulnerabilities',
+            capabilities: ['shell:run', 'fs:read'],
+          },
+          {
+            name: 'audit_secrets',
+            description: 'Scan codebase for hardcoded secrets and credentials',
+            capabilities: ['fs:read'],
+            patterns: SECRET_PATTERNS.length,
+            categories: [...new Set(SECRET_PATTERNS.map((p) => p.category))],
+          },
+          {
+            name: 'audit_sast',
+            description: 'Static analysis security testing',
+            capabilities: ['fs:read'],
+            rules: SAST_RULES.map((r) => r.name),
+            languages: ['javascript', 'typescript', 'python', 'java', 'go', 'php'],
+          },
+          {
+            name: 'audit_owasp',
+            description: 'OWASP Top 10 compliance check',
+            capabilities: ['fs:read'],
+            versions: ['2021', '2017'],
+          },
+          {
+            name: 'audit_generate_report',
+            description: 'Generate comprehensive security audit report',
+            capabilities: [],
+            formats: ['markdown', 'json', 'html'],
+          },
+          {
+            name: 'audit_status',
+            description: 'Check available audit capabilities',
+            capabilities: [],
+          },
         ],
       };
 
-      return buildToolResult('audit_status', true, JSON.stringify(status, null, 2), undefined, undefined, start);
+      return buildToolResult(
+        'audit_status',
+        true,
+        JSON.stringify(status, null, 2),
+        undefined,
+        undefined,
+        start,
+      );
     } catch (error) {
-      return buildToolResult('audit_status', false, '', `Status check failed: ${error instanceof Error ? error.message : String(error)}`, undefined, start);
+      return buildToolResult(
+        'audit_status',
+        false,
+        '',
+        `Status check failed: ${error instanceof Error ? error.message : String(error)}`,
+        undefined,
+        start,
+      );
     }
   },
 };
@@ -831,7 +1483,9 @@ export async function onLoad(ctx: PluginContext): Promise<void> {
   } catch {
     // use defaults
   }
-  console.log(`[cortex-plugin-security-audit] Loaded with threshold: ${pluginConfig.severityThreshold}`);
+  console.log(
+    `[cortex-plugin-security-audit] Loaded with threshold: ${pluginConfig.severityThreshold}`,
+  );
 }
 
 export async function onUnload(_ctx: PluginContext): Promise<void> {

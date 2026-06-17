@@ -1,6 +1,6 @@
 {
   "name": "cortex-plugin-security-audit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automated security scanning: dependency vulnerabilities, SAST analysis, secret detection, OWASP Top 10 checks. Agent runs scans, explains findings, and generates fix PRs.",
   "kind": "esm",
   "entryPoint": "mod.ts",
