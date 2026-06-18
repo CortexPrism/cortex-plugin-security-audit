@@ -1,6 +1,6 @@
 {
   "name": "cortex-plugin-security-audit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automated security scanning: dependency vulnerabilities, SAST analysis, secret detection, OWASP Top 10 checks. Agent runs scans, explains findings, and generates fix PRs.",
   "kind": "esm",
   "entryPoint": "mod.ts",
@@ -172,7 +172,8 @@
             "label": "Severity Threshold",
             "description": "Minimum severity level to include in reports",
             "default": "medium",
-            "options": [
+            "key": "severityThreshold",
+            "enum": [
               {
                 "label": "Low",
                 "value": "low"
@@ -189,8 +190,7 @@
                 "label": "Critical",
                 "value": "critical"
               }
-            ],
-            "key": "severityThreshold"
+            ]
           },
           {
             "type": "number",
@@ -210,6 +210,7 @@
       }
     ]
   },
+  "dependencies": {},
   "peerDependencies": {
     "cortex": ">=1.0.0"
   },

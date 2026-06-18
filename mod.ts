@@ -1483,13 +1483,13 @@ export async function onLoad(ctx: PluginContext): Promise<void> {
   } catch {
     // use defaults
   }
-  console.log(
+  ctx.logger.info(
     `[cortex-plugin-security-audit] Loaded with threshold: ${pluginConfig.severityThreshold}`,
   );
 }
 
-export async function onUnload(_ctx: PluginContext): Promise<void> {
-  console.log('[cortex-plugin-security-audit] Unloading...');
+export async function onUnload(ctx: PluginContext): Promise<void> {
+  ctx.logger.info('[cortex-plugin-security-audit] Unloading...');
 }
 
 export const tools: Tool[] = [
