@@ -1,8 +1,8 @@
 # Security Audit Agent
 
-Automated security scanning for CortexPrism. Detects dependency vulnerabilities, hardcoded secrets,
-SAST issues, and OWASP Top 10 violations. Generates detailed audit reports with remediation
-guidance.
+Automated security scanning for CortexPrism. Detects dependency vulnerabilities,
+hardcoded secrets, SAST issues, and OWASP Top 10 violations. Generates detailed
+audit reports with remediation guidance.
 
 ## Installation
 
@@ -57,8 +57,8 @@ Scan project dependencies for known vulnerabilities.
 **Parameters:**
 
 - `project_path` (string, required) — Path to the project root directory
-- `package_manager` (string, optional, default: "auto") — One of: `npm`, `pip`, `cargo`, `gomod`,
-  `auto`
+- `package_manager` (string, optional, default: "auto") — One of: `npm`, `pip`,
+  `cargo`, `gomod`, `auto`
 - `output_format` (string, optional, default: "json") — `json` or `markdown`
 
 **Example:**
@@ -77,8 +77,10 @@ Scan codebase for hardcoded secrets and credentials.
 **Parameters:**
 
 - `target_path` (string, required) — Directory or file to scan
-- `file_patterns` (string, optional) — Glob patterns, comma-separated (e.g. `*.ts,*.js,*.py`)
-- `exclude_dirs` (string, optional, default: "node_modules,.git,dist,build") — Directories to skip
+- `file_patterns` (string, optional) — Glob patterns, comma-separated (e.g.
+  `*.ts,*.js,*.py`)
+- `exclude_dirs` (string, optional, default: "node_modules,.git,dist,build") —
+  Directories to skip
 
 **Detection Categories (30+ patterns):**
 
@@ -109,10 +111,12 @@ Static analysis security testing for common vulnerability patterns.
 **Parameters:**
 
 - `target_path` (string, required) — Directory or file to analyze
-- `language` (string, required) — `javascript`, `typescript`, `python`, `java`, `go`, `php`
-- `rules` (string, optional) — Comma-separated rule groups or IDs. Available groups: `owasp_top10`,
-  `injection`, `xss`, `auth`, `crypto`. Or individual rules: `sql-injection`, `xss`,
-  `command-injection`, `path-traversal`, `ssrf`, `insecure-deserialization`, `hardcoded-crypto`
+- `language` (string, required) — `javascript`, `typescript`, `python`, `java`,
+  `go`, `php`
+- `rules` (string, optional) — Comma-separated rule groups or IDs. Available
+  groups: `owasp_top10`, `injection`, `xss`, `auth`, `crypto`. Or individual
+  rules: `sql-injection`, `xss`, `command-injection`, `path-traversal`, `ssrf`,
+  `insecure-deserialization`, `hardcoded-crypto`
 
 **SAST Rules:**
 
@@ -157,8 +161,10 @@ Generate a comprehensive security audit report from collected findings.
 **Parameters:**
 
 - `findings` (string, required) — JSON array of findings from audit tools
-- `format` (string, optional, default: "markdown") — `markdown`, `json`, or `html`
-- `include_remediation` (boolean, optional, default: true) — Include fix guidance
+- `format` (string, optional, default: "markdown") — `markdown`, `json`, or
+  `html`
+- `include_remediation` (boolean, optional, default: true) — Include fix
+  guidance
 
 **Example:**
 
@@ -184,7 +190,8 @@ Check what security audit capabilities are available.
 cortex tool call audit_status
 ```
 
-Output includes available tools, pattern counts, supported languages, and current configuration.
+Output includes available tools, pattern counts, supported languages, and
+current configuration.
 
 ## Configuration
 
@@ -228,7 +235,8 @@ In `~/.cortex/config.json`:
 
 ## OWASP Mapping
 
-Each finding includes an OWASP Top 10 category reference for compliance tracking.
+Each finding includes an OWASP Top 10 category reference for compliance
+tracking.
 
 ### OWASP 2021
 
@@ -283,18 +291,18 @@ deno task validate
 
 ### No files scanned
 
-Ensure `target_path` points to a valid directory and `exclude_dirs` isn't too aggressive. Try
-explicit `file_patterns` like `*.ts,*.js`.
+Ensure `target_path` points to a valid directory and `exclude_dirs` isn't too
+aggressive. Try explicit `file_patterns` like `*.ts,*.js`.
 
 ### Package manager not detected
 
-Use `--package_manager auto` to auto-detect from lock files (package-lock.json, requirements.txt,
-Cargo.toml, go.mod), or specify explicitly.
+Use `--package_manager auto` to auto-detect from lock files (package-lock.json,
+requirements.txt, Cargo.toml, go.mod), or specify explicitly.
 
 ### Secret patterns not matching
 
-The scanner uses regex-based detection. Custom patterns can be added in the `SECRET_PATTERNS` array
-in `mod.ts`.
+The scanner uses regex-based detection. Custom patterns can be added in the
+`SECRET_PATTERNS` array in `mod.ts`.
 
 ## License
 
