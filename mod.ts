@@ -1,10 +1,5 @@
 // deno-lint-ignore-file
-import type {
-  PluginContext,
-  Tool,
-  ToolCallResult,
-  ToolContext,
-} from "./types.ts";
+import type { PluginContext, Tool, ToolCallResult } from "cortex/plugins";
 
 interface PluginConfig {
   severityThreshold: "low" | "medium" | "high" | "critical";
@@ -629,7 +624,7 @@ function buildToolResult(
   error?: string,
   durationMs?: number,
   start?: number,
-): ToolResult {
+): ToolCallResult {
   return {
     toolName,
     success,
@@ -918,7 +913,7 @@ const auditDependenciesTool: Tool = {
 
   execute: async (
     args: Record<string, unknown>,
-    _ctx: ToolContext,
+    _ctx: PluginContext,
   ): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
@@ -1047,7 +1042,7 @@ const auditSecretsTool: Tool = {
 
   execute: async (
     args: Record<string, unknown>,
-    _ctx: ToolContext,
+    _ctx: PluginContext,
   ): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
@@ -1233,7 +1228,7 @@ const auditSastTool: Tool = {
 
   execute: async (
     args: Record<string, unknown>,
-    _ctx: ToolContext,
+    _ctx: PluginContext,
   ): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
@@ -1367,7 +1362,7 @@ const auditOwaspTool: Tool = {
 
   execute: async (
     args: Record<string, unknown>,
-    _ctx: ToolContext,
+    _ctx: PluginContext,
   ): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
@@ -1459,7 +1454,7 @@ const auditGenerateReportTool: Tool = {
 
   execute: async (
     args: Record<string, unknown>,
-    _ctx: ToolContext,
+    _ctx: PluginContext,
   ): Promise<ToolCallResult> => {
     const start = Date.now();
     try {
@@ -1564,7 +1559,7 @@ const auditStatusTool: Tool = {
 
   execute: async (
     _args: Record<string, unknown>,
-    _ctx: ToolContext,
+    _ctx: PluginContext,
   ): Promise<ToolCallResult> => {
     const start = Date.now();
     try {

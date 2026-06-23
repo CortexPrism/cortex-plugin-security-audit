@@ -1,6 +1,6 @@
 {
   "name": "cortex-plugin-security-audit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Automated security scanning: dependency vulnerabilities, SAST analysis, secret detection, OWASP Top 10 checks. Agent runs scans, explains findings, and generates fix PRs.",
   "kind": "esm",
   "entryPoint": "mod.ts",
@@ -38,7 +38,7 @@
             "gomod",
             "auto"
           ],
-          "default": "auto"
+          "defaultValue": "auto"
         },
         {
           "name": "output_format",
@@ -49,7 +49,7 @@
             "json",
             "markdown"
           ],
-          "default": "json"
+          "defaultValue": "json"
         }
       ]
     },
@@ -74,7 +74,7 @@
           "type": "string",
           "description": "Comma-separated directories to exclude from scan",
           "required": false,
-          "default": "node_modules,.git,dist,build"
+          "defaultValue": "node_modules,.git,dist,build"
         }
       ]
     },
@@ -121,7 +121,7 @@
             "2021",
             "2017"
           ],
-          "default": "2021"
+          "defaultValue": "2021"
         }
       ]
     },
@@ -145,14 +145,14 @@
             "json",
             "html"
           ],
-          "default": "markdown"
+          "defaultValue": "markdown"
         },
         {
           "name": "include_remediation",
           "type": "boolean",
           "description": "Include remediation guidance in the report",
           "required": false,
-          "default": true
+          "defaultValue": true
         }
       ]
     },
@@ -171,9 +171,9 @@
             "type": "select",
             "label": "Severity Threshold",
             "description": "Minimum severity level to include in reports",
-            "default": "medium",
+            "defaultValue": "medium",
             "key": "severityThreshold",
-            "enum": [
+            "options": [
               {
                 "label": "Low",
                 "value": "low"
@@ -196,14 +196,14 @@
             "type": "number",
             "label": "Max File Size (MB)",
             "description": "Maximum file size in megabytes to scan",
-            "default": 10,
+            "defaultValue": 10,
             "key": "maxFileSizeMB"
           },
           {
             "type": "text",
             "label": "Exclude Directories",
             "description": "Comma-separated directories to exclude from scans",
-            "default": "node_modules,.git,dist,build,__pycache__",
+            "defaultValue": "node_modules,.git,dist,build,__pycache__",
             "key": "excludeDirs"
           }
         ]
@@ -212,7 +212,7 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "cortex": ">=1.0.0"
+    "cortex": ">=0.51.0"
   },
   "aiDisclosure": {
     "tools": [
